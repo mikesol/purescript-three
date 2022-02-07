@@ -20,6 +20,8 @@ to generate this file without the comments in this block.
   , "prelude"
   , "psci-support"
   , "tidy-codegen"
+  , "transformers"
+  , "unordered-collections"
   , "variant"
   ]
 , packages = ./packages.dhall

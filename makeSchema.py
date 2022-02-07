@@ -224,6 +224,12 @@ import Data.Variant (Variant)
 '''+('\n'.join(psDefs)))
 
 
+for x in psDefs:
+    with open('.holes', 'w') as ofi:
+        for x in psDefs:
+            a = x.split(' ')[1]
+            ofi.write('parse%s :: forall e. T.%s -> MWriter (Declaration e)\nparse%s (T.%s v) = ?hole\n\n' % (a,a,a,a))
+
 def makeKids(par, kids, judgements):
     out = []
     tps = [x['tp'] for x in kids]
@@ -264,3 +270,21 @@ for root, dirs, files in os.walk(PATH, topdown=False):
             with open(ofn, 'w') as ofi:
                 mps = makePs(j)
                 ofi.write('\n'.join(['module %s where' % (ofn.replace('src/', '').replace('/', '.').replace('.purs','')), '', 'import Data.Maybe (Maybe(..))' if 'Just ' in mps or 'Nothing' in mps else '', 'import Data.Variant (inj)', 'import Type.Proxy (Proxy(..))', 'import TSAST as T', '', 'ast :: T.SourceFile', 'ast = '+mps]))
+
+with open('.imports', 'w') as ofi:
+    for root, dirs, files in os.walk(PATH, topdown=False):
+        for name in files:
+            fn = os.path.join(root, name)
+            ofn = ('/'.join([uc(x) for x in fn.split('/')])
+                ).replace('Tmp', 'src/AST').replace('.json', '.purs')
+            x = ofn.replace('src/', '').replace('/', '.').replace('.purs','')
+            ofi.write('\n'.join(['import %s as %s\n' % (x,  x.split('.')[-1])]))
+    ofi.write('asts :: Map String T.SourceFile\nasts = Map.fromFoldable [\n')
+    for root, dirs, files in os.walk(PATH, topdown=False):
+        for name in files:
+            fn = os.path.join(root, name)
+            ofn = ('/'.join([uc(x) for x in fn.split('/')])
+                ).replace('Tmp', 'src/AST').replace('.json', '.purs')
+            x = ofn.replace('src/', '').replace('/', '.').replace('.purs','')
+            ofi.write('\n'.join(['  "%s" /\ %s.ast,\n' % (x,  x.split('.')[-1])]))
+    ofi.write('  ]\n')
