@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "format": "purs-tidy format-in-place --width 80 \"src/**/*.purs\""
+    "format": "purs-tidy format-in-place --width 80 \"src/**/*.purs\"",
+    "build": "python makeSchema.py && npm run format && spago build"
   },
   "keywords": [],
   "author": "",

@@ -172,7 +172,7 @@ def refine_judgements(all, judgements, first):
             downgrade_to_opt(judgements[x], judgements)
             x += 1
         # if something was untreated and it was a variant
-        elif isinstance(judgements[x], Variant) and len(set(judgements[x].subs).intersection([y['tp'] for y in all])) == 0:
+        elif isinstance(judgements[x], Variant) and len(set([m.sub for m in judgements[x].subs]).intersection([y['tp'] for y in all])) == 0:
             jx = judgements[x]
             del judgements[x]
             judgements += [y if isinstance(y, Many) else Opt(y.sub) for y in jx.subs]
@@ -262,5 +262,5 @@ for root, dirs, files in os.walk(PATH, topdown=False):
             if not os.path.exists(os.path.dirname(ofn)):
                 os.makedirs(os.path.dirname(ofn))
             with open(ofn, 'w') as ofi:
-                ofi.write('\n'.join(['module %s where' % (ofn.replace('src/', '').replace('/', '.').replace('.purs','')), '', 'import Data.Maybe (Maybe(..))',
-                           'import Data.Variant (Variant, inj)', 'import Type.Proxy (Proxy(..))', 'import TSAST as T', '', 'ast :: T.SourceFile', 'ast = '+makePs(j)]))
+                mps = makePs(j)
+                ofi.write('\n'.join(['module %s where' % (ofn.replace('src/', '').replace('/', '.').replace('.purs','')), '', 'import Data.Maybe (Maybe(..))' if 'Just ' in mps or 'Nothing' in mps else '', 'import Data.Variant (inj)', 'import Type.Proxy (Proxy(..))', 'import TSAST as T', '', 'ast :: T.SourceFile', 'ast = '+mps]))
