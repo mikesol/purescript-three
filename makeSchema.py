@@ -164,10 +164,20 @@ def refine_judgements(all, judgements, first):
             else:
                 # else make optional
                 judgements.append(Opt(tp))
-    for x in range(len(judgements)):
+    x = 0
+    while True:
+        if x == len(judgements): break
         # if something was untreated and it was a singleton
         if isinstance(judgements[x], Singleton) and judgements[x].sub not in [y['tp'] for y in all]:
             downgrade_to_opt(judgements[x], judgements)
+            x += 1
+        # if something was untreated and it was a variant
+        elif isinstance(judgements[x], Variant) and len(set(judgements[x].subs).intersection([y['tp'] for y in all])) == 0:
+            jx = judgements[x]
+            del judgements[x]
+            judgements += [y if isinstance(y, Many) else Opt(y.sub) for y in jx.subs]
+            x = 0
+        else: x += 1
 
 
 def build_judgements(j):
@@ -175,6 +185,8 @@ def build_judgements(j):
     not_seen_yet = tp not in types
     if not_seen_yet:
         types[tp] = []
+    #if tp == 'UnionType':
+    #  print(tp, [x['tp'] for x in j['kids']], types[tp])
     refine_judgements(j['kids'], types[tp], not_seen_yet)
     for kid in j['kids']:
         build_judgements(kid)
@@ -189,6 +201,7 @@ for root, dirs, files in os.walk(PATH, topdown=False):
 
 
 def lc(y): return y[0].lower()+y[1:]
+def uc(y): return y[0].upper()+y[1:]
 
 
 def makeDef(y):
@@ -209,3 +222,45 @@ with open('src/TSAST.purs', 'w') as ofi:
 import Data.Maybe (Maybe)
 import Data.Variant (Variant)
 '''+('\n'.join(psDefs)))
+
+
+def makeKids(par, kids, judgements):
+    out = []
+    tps = [x['tp'] for x in kids]
+    for judgement in judgements:
+        if isinstance(judgement, Opt):
+            out.append('%s: %s' % (lc(judgement.sub), 'Nothing' if judgement.sub not in tps else 'Just (%s)' % makePs(
+                [z for z in kids if z['tp'] == judgement.sub][0])))
+        elif isinstance(judgement, Singleton):
+            out.append('%s: %s' % (lc(judgement.sub), makePs(
+                [z for z in kids if z['tp'] == judgement.sub][0])))
+        elif isinstance(judgement, Many):
+            out.append('%s: %s' % (lc(judgement.sub), '[%s]' % ', '.join(
+                [makePs(z) for z in kids if z['tp'] == judgement.sub])))
+        else:
+            # print(par, tps, [x.sub for x in judgement.subs])
+            sg = [x for x in tps if x
+                  in [z.sub for z in judgement.subs]][0]
+            ch = [z for z in judgement.subs if z.sub == sg][0]
+            out.append('%s: inj (Proxy :: Proxy "%s") %s' % ('_or_'.join([lc(x.sub) for x in judgement.subs]), lc(sg), ('(%s)' % makePs(
+                [y for y in kids if y['tp'] == sg][0])) if isinstance(ch, Singleton) else '[%s]' % ', '.join([makePs(y) for y in kids if y['tp'] == sg])))
+    return ', '.join(out)
+
+
+def makePs(j):
+    tp = j['tp']
+    return 'T.'+tp + ' { ' + ('text: "%s"' % j['txt'] if len(types[tp]) == 0 else makeKids(tp, j['kids'], types[tp])) + ' }'
+
+
+for root, dirs, files in os.walk(PATH, topdown=False):
+    for name in files:
+        fn = os.path.join(root, name)
+        ofn = ('/'.join([uc(x) for x in fn.split('/')])
+               ).replace('Tmp', 'src/AST').replace('.json', '.purs')
+        with open(fn, 'r') as ifi:
+            j = json.loads(ifi.read())
+            if not os.path.exists(os.path.dirname(ofn)):
+                os.makedirs(os.path.dirname(ofn))
+            with open(ofn, 'w') as ofi:
+                ofi.write('\n'.join(['module %s where' % (ofn.replace('src/', '').replace('/', '.').replace('.purs','')), '', 'import Data.Maybe (Maybe(..))',
+                           'import Data.Variant (Variant, inj)', 'import Type.Proxy (Proxy(..))', 'import TSAST as T', '', 'ast :: T.SourceFile', 'ast = '+makePs(j)]))
