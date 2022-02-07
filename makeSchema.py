@@ -215,12 +215,14 @@ for k, v in types.items():
     else:
         psDefs.append(
             ('newtype %s = %s { ' % (k, k)) + ', '.join([makeDef(y) for y in v]) + ' }')
+    psDefs.append('derive instance newtype%s :: Newtype %s _' % (k, k))
 
 with open('src/TSAST.purs', 'w') as ofi:
     ofi.write('''module TSAST where
 
 import Data.Maybe (Maybe)
 import Data.Variant (Variant)
+import Data.Newtype (class Newtype)
 '''+('\n'.join(psDefs)))
 
 
