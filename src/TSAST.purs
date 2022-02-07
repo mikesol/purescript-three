@@ -1,111 +1,69 @@
 module TSAST where
 
-import Foreign (Foreign)
+import Data.Maybe (Maybe)
 import Data.Variant (Variant)
-
-newtype Unit_ = Unit_ Foreign
-
-newtype SourceFile = SourceFile
-  ( Array
-      ( Variant
-          ( importDeclaration :: ImportDeclaration
-          , classDeclaration :: ClassDeclaration
-          , interfaceDeclaration :: InterfaceDeclaration
-          , enumDeclaration :: EnumDeclaration
-          , typeAliasDeclaration :: Type_
-          , constDeclaration :: ConstDeclaration
-          )
-      )
-  )
-
--- in three.js types, enums are assigned their values afterwards
--- under the hood, they are always ints
--- so here, it will always be an empty data decl, and we'll link them up later
-newtype EnumDeclaration = EnumDeclaration { name :: String }
-
-newtype FunctionDefinition = FunctionDefinition
-  { identifier :: String
-  , parameters :: Array Parameter
-  , returns :: Type_
-  }
-
-newtype ConstDeclaration = ConstDeclaration
-  { identifier :: String
-  , type_ :: Type_
-  }
-
-newtype InterfaceDeclaration = InterfaceDeclaration
-  { properties :: Array PropertyDeclaration
-  , functions :: Array FunctionDefinition
-  }
-
-newtype ImportDeclaration = ImportDeclaration
-  { importClause :: ImportClause
-  , stringLiteral :: String
-  }
-
-newtype ImportClause = ImportClause
-  ( Variant
-      ( namedImports :: Array String
-      , identifier :: String
-      , namespaceImport :: String
-      )
-  )
-
-newtype ClassDeclaration = ClassDeclaration
-  { identifier :: String
-  , export :: Boolean
-  , constructor :: Array Parameter
-  , properties :: Array PropertyDeclaration
-  , methods :: Array MethodDeclaration
-  }
-
-newtype LiteralType = LiteralType
-  ( Variant
-      ( number :: Unit_
-      , string :: Unit_
-      , typeReference :: String
-      , true_ :: Unit_
-      , false_ :: Unit_
-      , null :: Unit_
-      )
-  )
-
-newtype Type_ = Type_
-  ( Variant
-      ( number :: Unit_
-      , string :: Unit_
-      , union :: Array Type_
-      , array :: Type_
-      , any :: Unit_
-      , null :: Unit_
-      , typeReference :: String
-      , literal :: LiteralType
-      )
-  )
-
-newtype Parameter = Parameter
-  { identifier :: String
-  , optional :: Boolean
-  , type_ :: Type_
-  }
-
-newtype PropertyDeclaration = PropertyDeclaration
-  { readOnly :: Boolean
-  , identifier :: String
-  , type_ :: Type_
-  }
-
-newtype MethodReturnType = MethodReturnType
-  ( Variant
-      ( this :: Unit_
-      , type_ :: Type_
-      )
-  )
-
-newtype MethodDeclaration = MethodDeclaration
-  { static :: Boolean
-  , identifier :: String
-  , parameters :: Array Parameter
-  , returns :: MethodReturnType
-  }
+newtype SourceFile = SourceFile { importDeclaration :: Array ImportDeclaration, interfaceDeclaration :: Array InterfaceDeclaration, classDeclaration_or_moduleDeclaration_or_firstStatement_or_exportDeclaration_or_typeAliasDeclaration_or_functionDeclaration_or_enumDeclaration :: Variant (classDeclaration :: Array ClassDeclaration, moduleDeclaration :: Array ModuleDeclaration, firstStatement :: Array FirstStatement, exportDeclaration :: Array ExportDeclaration, typeAliasDeclaration :: Array TypeAliasDeclaration, functionDeclaration :: Array FunctionDeclaration, enumDeclaration :: Array EnumDeclaration), endOfFileToken :: EndOfFileToken }
+newtype ImportDeclaration = ImportDeclaration { importClause :: ImportClause, stringLiteral :: StringLiteral }
+newtype ImportClause = ImportClause { namedImports_or_namespaceImport :: Variant (namedImports :: NamedImports, namespaceImport :: NamespaceImport) }
+newtype NamedImports = NamedImports { importSpecifier :: Array ImportSpecifier }
+newtype ImportSpecifier = ImportSpecifier { identifier :: Identifier }
+newtype Identifier = Identifier { text :: String }
+newtype StringLiteral = StringLiteral { text :: String }
+newtype InterfaceDeclaration = InterfaceDeclaration { exportKeyword :: ExportKeyword, identifier :: Identifier, propertySignature :: Array PropertySignature, methodSignature :: Array MethodSignature, heritageClause :: Maybe HeritageClause, indexSignature :: Maybe IndexSignature, typeParameter :: Maybe TypeParameter, constructSignature :: Maybe ConstructSignature }
+newtype ExportKeyword = ExportKeyword { text :: String }
+newtype PropertySignature = PropertySignature { identifier :: Identifier, stringKeyword_or_typeReference_or_numberKeyword_or_arrayType_or_questionToken_or_anyKeyword_or_booleanKeyword_or_unionType_or_literalType_or_typeLiteral_or_readonlyKeyword :: Variant (stringKeyword :: StringKeyword, typeReference :: TypeReference, numberKeyword :: NumberKeyword, arrayType :: ArrayType, questionToken :: QuestionToken, anyKeyword :: AnyKeyword, booleanKeyword :: BooleanKeyword, unionType :: UnionType, literalType :: LiteralType, typeLiteral :: TypeLiteral, readonlyKeyword :: ReadonlyKeyword) }
+newtype StringKeyword = StringKeyword { text :: String }
+newtype TypeReference = TypeReference { identifier_or_firstNode_or_stringKeyword :: Variant (identifier :: Identifier, firstNode :: FirstNode, stringKeyword :: StringKeyword), typeReference :: Array TypeReference, anyKeyword :: Maybe AnyKeyword, unionType :: Maybe UnionType, arrayType :: Maybe ArrayType, typeLiteral :: Maybe TypeLiteral, thisType :: Maybe ThisType, numberKeyword :: Maybe NumberKeyword, voidKeyword :: Maybe VoidKeyword, booleanKeyword :: Maybe BooleanKeyword, functionType :: Maybe FunctionType }
+newtype MethodSignature = MethodSignature { identifier :: Identifier, typeReference_or_anyKeyword_or_parameter_or_stringKeyword_or_numberKeyword_or_voidKeyword_or_unionType_or_arrayType_or_questionToken_or_thisType_or_booleanKeyword :: Variant (typeReference :: TypeReference, anyKeyword :: AnyKeyword, parameter :: Array Parameter, stringKeyword :: StringKeyword, numberKeyword :: NumberKeyword, voidKeyword :: VoidKeyword, unionType :: UnionType, arrayType :: ArrayType, questionToken :: QuestionToken, thisType :: ThisType, booleanKeyword :: BooleanKeyword) }
+newtype AnyKeyword = AnyKeyword { text :: String }
+newtype ClassDeclaration = ClassDeclaration { exportKeyword :: Maybe ExportKeyword, identifier :: Identifier, heritageClause :: Maybe HeritageClause, constructor :: Array Constructor, propertyDeclaration :: Array PropertyDeclaration, methodDeclaration :: Array MethodDeclaration, typeParameter :: Array TypeParameter, setAccessor :: Maybe SetAccessor, getAccessor :: Array GetAccessor, firstContextualKeyword :: Maybe FirstContextualKeyword }
+newtype HeritageClause = HeritageClause { expressionWithTypeArguments :: ExpressionWithTypeArguments }
+newtype ExpressionWithTypeArguments = ExpressionWithTypeArguments { identifier :: Identifier, typeReference :: Array TypeReference }
+newtype Constructor = Constructor { parameter :: Array Parameter }
+newtype Parameter = Parameter { identifier :: Identifier, typeReference_or_questionToken_or_numberKeyword_or_anyKeyword_or_unionType_or_stringKeyword_or_functionType_or_typeLiteral_or_objectKeyword_or_booleanKeyword_or_arrayType_or_thisType_or_intersectionType_or_dotDotDotToken_or_literalType :: Variant (typeReference :: TypeReference, questionToken :: QuestionToken, numberKeyword :: NumberKeyword, anyKeyword :: AnyKeyword, unionType :: UnionType, stringKeyword :: StringKeyword, functionType :: FunctionType, typeLiteral :: TypeLiteral, objectKeyword :: ObjectKeyword, booleanKeyword :: BooleanKeyword, arrayType :: ArrayType, thisType :: ThisType, intersectionType :: IntersectionType, dotDotDotToken :: DotDotDotToken, literalType :: LiteralType) }
+newtype QuestionToken = QuestionToken { text :: String }
+newtype NumberKeyword = NumberKeyword { text :: String }
+newtype PropertyDeclaration = PropertyDeclaration { identifier :: Identifier, stringKeyword_or_typeReference_or_numberKeyword_or_readonlyKeyword_or_literalType_or_unionType_or_booleanKeyword_or_functionType_or_typeLiteral_or_questionToken_or_arrayType_or_anyKeyword_or_staticKeyword_or_trueKeyword :: Variant (stringKeyword :: StringKeyword, typeReference :: TypeReference, numberKeyword :: NumberKeyword, readonlyKeyword :: ReadonlyKeyword, literalType :: LiteralType, unionType :: UnionType, booleanKeyword :: BooleanKeyword, functionType :: FunctionType, typeLiteral :: TypeLiteral, questionToken :: QuestionToken, arrayType :: ArrayType, anyKeyword :: AnyKeyword, staticKeyword :: StaticKeyword, trueKeyword :: TrueKeyword) }
+newtype ReadonlyKeyword = ReadonlyKeyword { text :: String }
+newtype LiteralType = LiteralType { trueKeyword_or_stringLiteral_or_nullKeyword_or_firstLiteralToken :: Variant (trueKeyword :: TrueKeyword, stringLiteral :: StringLiteral, nullKeyword :: NullKeyword, firstLiteralToken :: FirstLiteralToken) }
+newtype TrueKeyword = TrueKeyword { text :: String }
+newtype MethodDeclaration = MethodDeclaration { identifier :: Identifier, typeReference_or_anyKeyword_or_parameter_or_voidKeyword_or_thisType_or_unionType_or_arrayType_or_stringKeyword_or_typeParameter_or_typeLiteral_or_numberKeyword_or_objectKeyword_or_staticKeyword_or_functionType_or_booleanKeyword_or_conditionalType :: Variant (typeReference :: TypeReference, anyKeyword :: AnyKeyword, parameter :: Array Parameter, voidKeyword :: VoidKeyword, thisType :: ThisType, unionType :: UnionType, arrayType :: ArrayType, stringKeyword :: StringKeyword, typeParameter :: TypeParameter, typeLiteral :: TypeLiteral, numberKeyword :: NumberKeyword, objectKeyword :: ObjectKeyword, staticKeyword :: StaticKeyword, functionType :: FunctionType, booleanKeyword :: BooleanKeyword, conditionalType :: ConditionalType) }
+newtype EndOfFileToken = EndOfFileToken { text :: String }
+newtype UnionType = UnionType { typeReference :: Array TypeReference, literalType_or_numberKeyword_or_stringKeyword_or_undefinedKeyword_or_objectKeyword_or_parenthesizedType_or_arrayType_or_typeLiteral_or_booleanKeyword :: Variant (literalType :: Array LiteralType, numberKeyword :: NumberKeyword, stringKeyword :: StringKeyword, undefinedKeyword :: UndefinedKeyword, objectKeyword :: ObjectKeyword, parenthesizedType :: ParenthesizedType, arrayType :: Array ArrayType, typeLiteral :: TypeLiteral, booleanKeyword :: BooleanKeyword) }
+newtype NullKeyword = NullKeyword { text :: String }
+newtype BooleanKeyword = BooleanKeyword { text :: String }
+newtype FunctionType = FunctionType { parameter :: Array Parameter, voidKeyword_or_stringKeyword_or_typeParameter_or_anyKeyword_or_numberKeyword :: Variant (voidKeyword :: VoidKeyword, stringKeyword :: StringKeyword, typeParameter :: TypeParameter, anyKeyword :: AnyKeyword, numberKeyword :: NumberKeyword) }
+newtype VoidKeyword = VoidKeyword { text :: String }
+newtype TypeLiteral = TypeLiteral { indexSignature_or_propertySignature :: Variant (indexSignature :: IndexSignature, propertySignature :: Array PropertySignature) }
+newtype IndexSignature = IndexSignature { parameter :: Parameter, typeReference_or_stringKeyword_or_unionType_or_numberKeyword_or_anyKeyword_or_arrayType :: Variant (typeReference :: TypeReference, stringKeyword :: StringKeyword, unionType :: UnionType, numberKeyword :: NumberKeyword, anyKeyword :: AnyKeyword, arrayType :: ArrayType) }
+newtype ThisType = ThisType { text :: String }
+newtype UndefinedKeyword = UndefinedKeyword { text :: String }
+newtype ObjectKeyword = ObjectKeyword { text :: String }
+newtype ModuleDeclaration = ModuleDeclaration { exportKeyword :: ExportKeyword, identifier :: Identifier, moduleBlock :: ModuleBlock }
+newtype ModuleBlock = ModuleBlock { firstStatement :: Array FirstStatement, functionDeclaration :: Array FunctionDeclaration, exportDeclaration :: Maybe ExportDeclaration, classDeclaration :: Maybe ClassDeclaration }
+newtype FirstStatement = FirstStatement { variableDeclarationList :: VariableDeclarationList, exportKeyword :: Maybe ExportKeyword }
+newtype VariableDeclarationList = VariableDeclarationList { variableDeclaration :: VariableDeclaration }
+newtype VariableDeclaration = VariableDeclaration { identifier :: Identifier, booleanKeyword_or_anyKeyword_or_typeReference_or_numberKeyword_or_stringKeyword_or_typeLiteral :: Variant (booleanKeyword :: BooleanKeyword, anyKeyword :: AnyKeyword, typeReference :: TypeReference, numberKeyword :: NumberKeyword, stringKeyword :: StringKeyword, typeLiteral :: TypeLiteral) }
+newtype FunctionDeclaration = FunctionDeclaration { identifier :: Identifier, parameter :: Array Parameter, voidKeyword_or_anyKeyword_or_numberKeyword_or_stringKeyword_or_typeReference_or_unionType_or_arrayType_or_booleanKeyword_or_literalType_or_exportKeyword :: Variant (voidKeyword :: VoidKeyword, anyKeyword :: AnyKeyword, numberKeyword :: NumberKeyword, stringKeyword :: StringKeyword, typeReference :: TypeReference, unionType :: UnionType, arrayType :: ArrayType, booleanKeyword :: BooleanKeyword, literalType :: LiteralType, exportKeyword :: ExportKeyword) }
+newtype ArrayType = ArrayType { stringKeyword_or_typeReference_or_anyKeyword_or_numberKeyword_or_arrayType_or_objectKeyword :: Variant (stringKeyword :: StringKeyword, typeReference :: TypeReference, anyKeyword :: AnyKeyword, numberKeyword :: NumberKeyword, arrayType :: ArrayType, objectKeyword :: ObjectKeyword) }
+newtype ParenthesizedType = ParenthesizedType { functionType_or_intersectionType :: Variant (functionType :: FunctionType, intersectionType :: IntersectionType) }
+newtype TypeParameter = TypeParameter { identifier :: Identifier, typeReference :: Array TypeReference, unionType :: Array UnionType, indexedAccessType :: Maybe IndexedAccessType, anyKeyword :: Maybe AnyKeyword, objectKeyword :: Maybe ObjectKeyword }
+newtype StaticKeyword = StaticKeyword { text :: String }
+newtype ExportDeclaration = ExportDeclaration { stringLiteral_or_namedExports :: Variant (stringLiteral :: StringLiteral, namedExports :: NamedExports) }
+newtype TypeAliasDeclaration = TypeAliasDeclaration { exportKeyword :: ExportKeyword, identifier :: Identifier, typeParameter :: Array TypeParameter, functionType_or_unionType_or_typeReference_or_tupleType :: Variant (functionType :: FunctionType, unionType :: UnionType, typeReference :: TypeReference, tupleType :: TupleType) }
+newtype IntersectionType = IntersectionType { typeReference_or_stringKeyword :: Variant (typeReference :: TypeReference, stringKeyword :: StringKeyword), typeLiteral :: Array TypeLiteral }
+newtype IndexedAccessType = IndexedAccessType { typeReference :: TypeReference, literalType :: LiteralType }
+newtype DotDotDotToken = DotDotDotToken { text :: String }
+newtype SetAccessor = SetAccessor { identifier :: Identifier, parameter :: Parameter }
+newtype GetAccessor = GetAccessor { identifier :: Identifier, numberKeyword_or_typeReference :: Variant (numberKeyword :: NumberKeyword, typeReference :: TypeReference) }
+newtype FirstLiteralToken = FirstLiteralToken { text :: String }
+newtype NamedExports = NamedExports { exportSpecifier :: Array ExportSpecifier }
+newtype ExportSpecifier = ExportSpecifier { identifier :: Array Identifier }
+newtype EnumDeclaration = EnumDeclaration { exportKeyword :: ExportKeyword, identifier :: Identifier, enumMember :: Array EnumMember }
+newtype EnumMember = EnumMember { stringLiteral_or_identifier_or_firstLiteralToken :: Variant (stringLiteral :: StringLiteral, identifier :: Identifier, firstLiteralToken :: FirstLiteralToken) }
+newtype ConstructSignature = ConstructSignature { parameter :: Parameter, typeReference :: TypeReference }
+newtype ConditionalType = ConditionalType { typeReference :: Array TypeReference }
+newtype FirstNode = FirstNode { identifier :: Array Identifier }
+newtype TupleType = TupleType { numberKeyword :: Array NumberKeyword }
+newtype FirstContextualKeyword = FirstContextualKeyword { text :: String }
+newtype NamespaceImport = NamespaceImport { identifier :: Identifier }
