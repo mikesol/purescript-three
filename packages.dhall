@@ -101,4 +101,107 @@ in  upstream
 let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.14.4-20211109/packages.dhall sha256:e8d8d5b339f6d46d950da90037c6c38e8809f7e34f727373089ab82c080fc709
 
-in  upstream
+let additions =
+      { tidy =
+        { dependencies =
+          [ "arrays"
+          , "control"
+          , "dodo-printer"
+          , "either"
+          , "foldable-traversable"
+          , "lists"
+          , "maybe"
+          , "ordered-collections"
+          , "partial"
+          , "prelude"
+          , "language-cst-parser"
+          , "strings"
+          , "tuples"
+          ]
+        , repo = "https://github.com/natefaubion/purescript-tidy.git"
+        , version = "v0.7.0"
+        }
+      , tidy-codegen =
+        { dependencies =
+          [ "aff"
+          , "ansi"
+          , "arrays"
+          , "avar"
+          , "bifunctors"
+          , "console"
+          , "control"
+          , "dodo-printer"
+          , "effect"
+          , "either"
+          , "enums"
+          , "exceptions"
+          , "filterable"
+          , "foldable-traversable"
+          , "free"
+          , "identity"
+          , "integers"
+          , "language-cst-parser"
+          , "lazy"
+          , "lists"
+          , "maybe"
+          , "newtype"
+          , "node-buffer"
+          , "node-child-process"
+          , "node-fs-aff"
+          , "node-path"
+          , "node-process"
+          , "node-streams"
+          , "ordered-collections"
+          , "parallel"
+          , "partial"
+          , "posix-types"
+          , "prelude"
+          , "record"
+          , "safe-coerce"
+          , "st"
+          , "strings"
+          , "tidy"
+          , "transformers"
+          , "tuples"
+          , "type-equality"
+          , "unicode"
+          ]
+        , repo = "https://github.com/natefaubion/purescript-tidy-codegen.git"
+        , version = "v2.0.0"
+        }
+      , language-cst-parser =
+        { dependencies =
+          [ "arrays"
+          , "const"
+          , "control"
+          , "effect"
+          , "either"
+          , "foldable-traversable"
+          , "free"
+          , "functors"
+          , "identity"
+          , "integers"
+          , "lazy"
+          , "lists"
+          , "maybe"
+          , "newtype"
+          , "numbers"
+          , "ordered-collections"
+          , "partial"
+          , "prelude"
+          , "psci-support"
+          , "st"
+          , "strings"
+          , "transformers"
+          , "tuples"
+          , "typelevel-prelude"
+          , "unfoldable"
+          , "unsafe-coerce"
+          ]
+        , repo =
+            "https://github.com/natefaubion/purescript-language-cst-parser.git"
+        , version = "v0.9.3"
+        }
+      }
+
+in  upstream // additions

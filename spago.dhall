@@ -14,9 +14,12 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "console"
   , "effect"
+  , "foreign"
+  , "language-cst-parser"
   , "maybe"
   , "prelude"
   , "psci-support"
+  , "tidy-codegen"
   , "variant"
   ]
 , packages = ./packages.dhall
