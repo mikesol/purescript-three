@@ -19,6 +19,7 @@ to generate this file without the comments in this block.
   , "maybe"
   , "prelude"
   , "psci-support"
+  , "strings-extra"
   , "tidy-codegen"
   , "transformers"
   , "unordered-collections"

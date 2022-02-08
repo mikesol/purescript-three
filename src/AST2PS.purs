@@ -1,7 +1,4 @@
-module AST2PS
-  ( nameToCamelCaseName
-  , pathToJSPath
-  ) where
+module AST2PS where
 
 import Prelude
 
@@ -239,8 +236,13 @@ import AST.Three.Legacy as Legacy
 import AST.Utils as Utils
 import Control.Monad.Except (Except)
 import Control.Monad.Writer (Writer, WriterT(..), tell)
+import Data.Array (drop, dropEnd, takeEnd)
+import Data.List (List(..), intercalate, (:))
+import Data.List as List
 import Data.Map as Map
 import Data.Newtype (unwrap)
+import Data.String (Pattern(..), split, toLower)
+import Data.String.Extra (camelCase)
 import Data.Traversable (traverse)
 import Data.Tuple.Nested ((/\))
 import Data.Variant (match)
@@ -498,16 +500,18 @@ asts = Map.fromFoldable
 parseSourceFile :: forall e. String -> T.SourceFile -> Stack (Declaration e)
 parseSourceFile name (T.SourceFile v) = module_ name []
   <$> traverse (parseImportDeclaration name) v.importDeclaration
-  <*> match
-    { classDeclaration: traverse (parseClassDeclaration name)
-    , moduleDeclaration: traverse (parseModuleDeclaration name)
-    , firstStatement: traverse (parseFirstStatement name)
-    , exportDeclaration: traverse (parseExportDeclaration name)
-    , typeAliasDeclaration: traverse (parseTypeAliasDeclaration name)
-    , functionDeclaration: traverse (parseFunctionDeclaration name)
-    , enumDeclaration: traverse (parseEnumDeclaration name)
-    }
-    v.classDeclaration_or_moduleDeclaration_or_firstStatement_or_exportDeclaration_or_typeAliasDeclaration_or_functionDeclaration_or_enumDeclaration
+  <*>
+    ( (<>) <$> traverse parseInterfaceDeclaration v.interfaceDeclaration <*> match
+        { classDeclaration: traverse (parseClassDeclaration name)
+        , moduleDeclaration: traverse (parseModuleDeclaration name)
+        , firstStatement: traverse (parseFirstStatement name)
+        , exportDeclaration: traverse (parseExportDeclaration name)
+        , typeAliasDeclaration: traverse (parseTypeAliasDeclaration name)
+        , functionDeclaration: traverse (parseFunctionDeclaration name)
+        , enumDeclaration: traverse (parseEnumDeclaration name)
+        }
+        v.classDeclaration_or_moduleDeclaration_or_firstStatement_or_exportDeclaration_or_typeAliasDeclaration_or_functionDeclaration_or_enumDeclaration
+    )
 
 parseImportDeclaration
   :: forall e. String -> T.ImportDeclaration -> Stack (ImportDecl e)
@@ -518,13 +522,23 @@ parseImportDeclaration name (T.ImportDeclaration v) = parseImportClause path
   path = unwrap (v.stringLiteral).text
 
 pathToPSPath :: String -> String -> String
-pathToPSPath path name = ?hole
+pathToPSPath = go <<< splitPath
+  where
+  splitPath = List.fromFoldable <<< split (Pattern "/")
+  go Nil o = o
+  go (a : b) o
+    | a == ".." = go b (intercalate "." (dropEnd 1 (split (Pattern ".") o)))
+    | otherwise = go b (o <> "." <> a)
 
 pathToJSPath :: String -> String -> String
-pathToJSPath path name = ?hole
+pathToJSPath path name = "three/src/" <> if withThreeAndVersionDropped == "Three.Legacy" then "Three.Legacy.js" else if withThreeAndVersionDropped == "Utils" then "utils.js" else jsify withThreeAndVersionDropped
+  where
+  psp = pathToPSPath path name
+  withThreeAndVersionDropped = intercalate "." (drop 2 (split (Pattern ".") psp))
+  jsify x = let sp = split (Pattern ".") x in intercalate "/" (map toLower (dropEnd 1 sp) <> takeEnd 1 sp)
 
 nameToCamelCaseName :: String -> String
-nameToCamelCaseName name = ?hole
+nameToCamelCaseName = camelCase
 
 parseImportClause
   :: forall e. String -> String -> T.ImportClause -> Stack (ImportDecl e)
@@ -559,12 +573,14 @@ parseImportSpecifier camelCaseName path name (T.ImportSpecifier v) = do
   where
   identifier = (unwrap v.identifier).text
 
-parseIdentifier :: forall e. String -> T.Identifier -> Stack (Declaration e)
-parseIdentifier name (T.Identifier v) = ?hole
+-- we always get identifiers one or more levels up, so this is unnecessary
+-- parseIdentifier :: forall e. String -> T.Identifier -> Stack (Declaration e)
+-- parseIdentifier name (T.Identifier v) = ?hole
 
-parseStringLiteral
-  :: forall e. String -> T.StringLiteral -> Stack (Declaration e)
-parseStringLiteral name (T.StringLiteral v) = ?hole
+-- we always get string literals one or more levels up, so this is unnecessary
+-- parseStringLiteral
+--  :: forall e. String -> T.StringLiteral -> Stack (Declaration e)
+-- parseStringLiteral name (T.StringLiteral v) = ?hole
 
 parseInterfaceDeclaration
   :: forall e. String -> T.InterfaceDeclaration -> Stack (Declaration e)
