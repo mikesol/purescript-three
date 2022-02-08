@@ -10,7 +10,5 @@
 /.spago
 /.vscode
 /tmp
-src/TSAST.purs
-src/AST/*
 .holes
 .imports
